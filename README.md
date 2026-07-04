@@ -1,16 +1,15 @@
 # OCR & VLM Synthetic Data Extraction Tools
 
-Bộ công cụ hỗ trợ chuẩn bị dữ liệu huấn luyện OCR và Layout Analysis cho các mô hình Vision-Language Models (VLMs) từ định dạng tài liệu PDF và source HTML.
+Bộ công cụ hỗ trợ chuẩn bị dữ liệu huấn luyện OCR và Layout Analysis cho các mô hình Vision-Language Models (VLMs) từ định dạng tài liệu PDF.
 
 ---
 
 ## 📂 Danh sách các file trong thư mục dự án (Root Files)
 
-- **[extract_pdf_layout.py](file:///home/namdv/workspace/HTML-Reversed/extract_pdf_layout.py)**: Script Python chính sử dụng thư viện `PyMuPDF` (`fitz`) để phân tích cú pháp file PDF, render ảnh trang giấy, trích xuất tọa độ văn bản (từ, dòng, đoạn) và ảnh kèm theo.
-- **[html_to_synthetic.py](file:///home/namdv/workspace/HTML-Reversed/html_to_synthetic.py)**: Script Python mẫu sử dụng `Playwright` để render code HTML, chụp màn hình và trích xuất tọa độ DOM của các phần tử chỉ định.
-- **[pharmarcity.pdf](file:///home/namdv/workspace/HTML-Reversed/pharmarcity.pdf)**: File PDF tài liệu mẫu để kiểm thử công cụ trích xuất.
-- **[README.md](file:///home/namdv/workspace/HTML-Reversed/README.md)**: File hướng dẫn này.
-- **[.gitignore](file:///home/namdv/workspace/HTML-Reversed/.gitignore)**: Cấu hình Git để loại bỏ thư mục kết quả `output_dataset` khỏi commit nhằm tránh làm nặng repository.
+- **[extract_pdf_layout.py](extract_pdf_layout.py)**: Script Python chính sử dụng thư viện `PyMuPDF` (`fitz`) để phân tích cú pháp file PDF, render ảnh trang giấy, trích xuất tọa độ văn bản (từ, dòng, đoạn) và ảnh kèm theo.
+- **[pharmarcity.pdf](pharmarcity.pdf)**: File PDF tài liệu mẫu để kiểm thử công cụ trích xuất.
+- **[README.md](README.md)**: File hướng dẫn này.
+- **[.gitignore](.gitignore)**: Cấu hình Git để loại bỏ thư mục kết quả `output_dataset` khỏi commit nhằm tránh làm nặng repository.
 
 ---
 
@@ -23,19 +22,15 @@ Bộ công cụ hỗ trợ chuẩn bị dữ liệu huấn luyện OCR và Layou
 Bạn nên cài đặt các thư viện cần thiết bằng pip:
 
 ```bash
-# Cài đặt thư viện cho công cụ PDF (đã có sẵn trong môi trường mặc định)
+# Cài đặt thư viện cho công cụ PDF
 pip install pymupdf pillow
-
-# Cài đặt thư viện cho công cụ HTML (Playwright)
-pip install playwright
-playwright install chromium
 ```
 
 ---
 
 ## 💻 Hướng dẫn sử dụng
 
-### 1. Trích xuất dữ liệu từ PDF (`extract_pdf_layout.py`)
+### Trích xuất dữ liệu từ PDF (`extract_pdf_layout.py`)
 
 Công cụ này xử lý các file PDF (được lưu trực tiếp từ web hoặc file gốc) để sinh ra dataset.
 
@@ -57,27 +52,6 @@ python3 extract_pdf_layout.py --pdf pharmarcity.pdf --output output_dataset --ex
 
 # Trích xuất cấp độ block văn bản và chuẩn hóa tọa độ bounding box về dạng [0, 1000]
 python3 extract_pdf_layout.py --pdf pharmarcity.pdf --output output_dataset_normalized --normalize --granularity block
-```
-
----
-
-### 2. Sinh dữ liệu từ mã nguồn HTML (`html_to_synthetic.py`)
-
-Công cụ này render trực tiếp code HTML để xuất ra ảnh screenshot và nhãn tọa độ DOM.
-
-**Cú pháp cơ bản:**
-```bash
-python3 html_to_synthetic.py --html <duong_dan_file_html_hoac_url> --output <thu_muc_output> [options]
-```
-
-**Các tham số tùy chọn (Options):**
-- `--selectors`: Danh sách các tag/class CSS cần trích xuất bounding box (mặc định: `p, h1, h2, h3, h4, h5, h6, img, button, a, span`).
-- `--width` / `--height`: Kích thước khung nhìn trình duyệt ban đầu (mặc định: `1280x800`).
-- `--normalize`: Chuẩn hóa tọa độ về dải `[0, 1000]`.
-
-**Ví dụ chạy thực tế:**
-```bash
-python3 html_to_synthetic.py --html index.html --output html_dataset --normalize
 ```
 
 ---

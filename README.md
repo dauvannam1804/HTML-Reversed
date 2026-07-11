@@ -1,132 +1,123 @@
 # OCR & VLM Synthetic Data Extraction Tools
 
-Bộ công cụ hỗ trợ chuẩn bị dữ liệu huấn luyện OCR và Layout Analysis cho các mô hình Vision-Language Models (VLMs) từ định dạng tài liệu PDF.
+Bộ công cụ hỗ trợ chuẩn bị dữ liệu huấn luyện OCR và Layout Analysis cho các mô hình Vision-Language Models (VLMs) từ tài liệu PDF và từ internet (tập dữ liệu FineWeb-2).
 
 ---
 
 ## 📂 Danh sách các file trong thư mục dự án (Root Files)
 
 - **[extract_pdf_layout.py](extract_pdf_layout.py)**: Script Python chính sử dụng thư viện `PyMuPDF` (`fitz`) để phân tích cú pháp file PDF, render ảnh trang giấy, trích xuất tọa độ văn bản (từ, dòng, đoạn) và ảnh kèm theo.
+- **[scrape_fineweb_pdf.py](scrape_fineweb_pdf.py)**: Script thu thập dữ liệu web từ tập dữ liệu `HuggingFaceFW/fineweb-2` (subset tiếng Việt `vie_Latn`), lọc theo năm (2021 -> 2026), tự động cuộn trang để kích hoạt lazy loading và in trang web thành PDF bằng trình duyệt Playwright ngầm trước khi chuyển sang pipeline trích xuất.
+- **[requirements.txt](requirements.txt)**: Khai báo tất cả các thư viện Python cần thiết cho dự án.
 - **[pharmarcity.pdf](pharmarcity.pdf)**: File PDF tài liệu mẫu để kiểm thử công cụ trích xuất.
-- **[README.md](README.md)**: File hướng dẫn này.
-- **[.gitignore](.gitignore)**: Cấu hình Git để loại bỏ thư mục kết quả `output_dataset` khỏi commit nhằm tránh làm nặng repository.
+- **[README.md](README.md)**: File hướng dẫn sử dụng và giải thích kỹ thuật này.
+- **[.gitignore](.gitignore)**: Cấu hình Git để loại bỏ thư mục kết quả `output_dataset` và môi trường ảo `.venv` khỏi commit.
 
 ---
 
 ## 🛠️ Hướng dẫn cài đặt (Setup)
 
-### Yêu cầu hệ thống
-- Python 3.10 trở lên.
+Khuyến khích sử dụng môi trường ảo độc lập qua công cụ `uv` để cài đặt nhanh chóng và tránh xung đột thư viện hệ thống:
 
-### Cài đặt thư viện
-Bạn nên cài đặt các thư viện cần thiết bằng pip:
+1. **Khởi tạo môi trường ảo**:
+   ```bash
+   uv venv .venv
+   ```
 
-```bash
-# Cài đặt thư viện cho công cụ PDF
-pip install pymupdf pillow
-```
+2. **Kích hoạt môi trường ảo**:
+   - Trên Linux/macOS:
+     ```bash
+     source .venv/bin/activate
+     ```
+   - Trên Windows (Command Prompt):
+     ```cmd
+     .venv\Scripts\activate.bat
+     ```
+
+3. **Cài đặt thư viện từ `requirements.txt`**:
+   ```bash
+   uv pip install -r requirements.txt
+   ```
+
+4. **Cài đặt driver cho Playwright**:
+   ```bash
+   .venv/bin/playwright install chromium
+   ```
 
 ---
 
 ## 💻 Hướng dẫn sử dụng
 
-### Trích xuất dữ liệu từ PDF (`extract_pdf_layout.py`)
+### 1. Thu thập dữ liệu web từ FineWeb-2 (`scrape_fineweb_pdf.py`)
 
-Công cụ này xử lý các file PDF (được lưu trực tiếp từ web hoặc file gốc) để sinh ra dataset.
+Công cụ này stream trực tiếp tập dữ liệu `HuggingFaceFW/fineweb-2` subset tiếng Việt, lọc các bài viết từ năm 2021 đến 2026, tải trang web dưới dạng PDF và trích xuất layout tự động.
 
 **Cú pháp cơ bản:**
 ```bash
-python3 extract_pdf_layout.py --pdf <duong_dan_file_pdf> --output <thu_muc_output> [options]
+.venv/bin/python scrape_fineweb_pdf.py --num-samples <so_luong_mau> --output <thu_muc_dau_ra> [options]
 ```
 
 **Các tham số tùy chọn (Options):**
+- `--num-samples`: Số lượng trang web cần tải và trích xuất thành công (mặc định: `5`).
+- `--output`: Thư mục lưu trữ kết quả (mặc định: `output_dataset/fineweb_samples`).
+- `--start-year` / `--end-year`: Khoảng năm bài viết được crawl để lọc dữ liệu (mặc định: `2021` đến `2026`).
 - `--granularity`: Cấp độ trích xuất chữ (`word` - mặc định, `line`, `block`).
 - `--dpi`: Độ phân giải ảnh đầu ra khi render PDF (mặc định: `150`).
 - `--normalize`: Chuẩn hóa tọa độ bounding box về dải `[0, 1000]`.
-- `--extract-images`: Trích xuất cả các file ảnh/logo bên trong PDF ra thư mục riêng và lưu đường dẫn vào JSON.
+- `--extract-images`: Trích xuất cả các file ảnh/logo có trong trang web ra thư mục riêng và lưu đường dẫn vào JSON.
 
 **Ví dụ chạy thực tế:**
 ```bash
-# Trích xuất chi tiết cấp từ và xuất cả các ảnh có trong file
-python3 extract_pdf_layout.py --pdf pharmarcity.pdf --output output_dataset --extract-images
+# Tải 5 trang web tiếng Việt (2021-2026), in PDF và trích xuất layout block, tọa độ chuẩn hóa, cắt ảnh
+.venv/bin/python scrape_fineweb_pdf.py --num-samples 5 --granularity block --normalize --extract-images
+```
 
-# Trích xuất cấp độ block văn bản và chuẩn hóa tọa độ bounding box về dạng [0, 1000]
-python3 extract_pdf_layout.py --pdf pharmarcity.pdf --output output_dataset_normalized --normalize --granularity block
+### 2. Trích xuất dữ liệu trực tiếp từ file PDF có sẵn (`extract_pdf_layout.py`)
+
+Công cụ này xử lý trực tiếp các file PDF có sẵn của bạn để sinh ra dataset.
+
+**Cú pháp cơ bản:**
+```bash
+.venv/bin/python extract_pdf_layout.py --pdf <duong_dan_file_pdf> --output <thu_muc_output> [options]
+```
+
+**Ví dụ chạy thực tế:**
+```bash
+.venv/bin/python extract_pdf_layout.py --pdf pharmarcity.pdf --output output_dataset/pharmarcity_layout --extract-images
 ```
 
 ---
 
-## 📁 Cấu trúc dữ liệu đầu ra và Giải thích mục đích các file (`output_dataset`)
+## 📁 Cấu trúc dữ liệu đầu ra (`output_dataset`)
 
-Thư mục kết quả đầu ra sau khi chạy lệnh trích xuất PDF có cấu trúc như sau:
+Thư mục kết quả sau khi chạy lệnh trích xuất được phân chia rõ ràng theo từng tài liệu để tránh ghi đè dữ liệu:
 
 ```text
-output_dataset/
-├── page_000.png                # Ảnh gốc trang 1
-├── layout_000.json             # Bounding box và text tương ứng trang 1
-├── viz_page_000.png            # Ảnh xem trước trực quan hóa (khung xanh/đỏ)
-├── ...
-└── extracted_images/           # Thư mục chứa các ảnh được trích xuất
-    ├── page_000_raw_0.png      # Byte ảnh gốc nhúng bên trong PDF
-    ├── page_000_crop_0.png     # Ảnh cắt thực tế (visual crop) hiển thị trên trang
-    └── ...
+output_dataset/fineweb_samples/
+├── doc_000/
+│   ├── document.pdf              # File PDF gốc tải về từ trang web
+│   ├── url.txt                   # Đường dẫn link trang web nguồn của tài liệu này
+│   ├── page_000.png              # Ảnh render trang 1
+│   ├── layout_000.json           # Nhãn layout và OCR trang 1
+│   ├── viz_page_000.png          # Ảnh xem trước trực quan (khung xanh cho text, đỏ cho ảnh)
+│   └── extracted_images/         # Thư mục chứa các ảnh con được trích xuất trên trang
+│       ├── page_000_raw_0.png    # Ảnh gốc nhúng bên trong PDF
+│       ├── page_000_crop_0.png   # Ảnh cắt thực tế từ giao diện hiển thị
+│       └── ...
+└── doc_001/
+    ├── ...
 ```
-
-### Chi tiết mục đích của từng file:
-
-1. **`page_XXX.png` (Ví dụ: `page_000.png`)**:
-   - **Mục đích**: Là ảnh chụp nguyên bản của trang PDF thứ `XXX` ở dạng định dạng PNG chất lượng cao.
-   - **Ứng dụng**: Làm **dữ liệu hình ảnh đầu vào (Input Image)** trực tiếp cho các mô hình VLM (như Donut, Kosmos, LayoutLMv3, LLaVA, v.v.) trong quá trình training.
-
-2. **`layout_XXX.json` (Ví dụ: `layout_000.json`)**:
-   - **Mục đích**: Chứa toàn bộ nhãn văn bản (ground truth text), vị trí ảnh và tọa độ bounding box tương ứng của trang giấy đó.
-   - **Ứng dụng**: Cung cấp **nhãn đầu ra (Target labels/Bounding Boxes)** cho mô hình học máy. File này liên kết trực tiếp tọa độ của chữ/ảnh với tọa độ pixel trên file `page_XXX.png` (hoặc hệ tọa độ chuẩn hóa `[0, 1000]`).
-
-3. **`viz_page_XXX.png` (Ví dụ: `viz_page_000.png`)**:
-   - **Mục đích**: File ảnh xem trước (Visualization) được sinh ra để hỗ trợ việc kiểm tra thủ công hoặc debug.
-   - **Cách đọc**: 
-     - Khung chữ nhật **màu xanh lá** biểu thị các vùng chữ (`text`).
-     - Khung chữ nhật **màu đỏ** biểu thị các vùng ảnh (`image`).
-   - **Ứng dụng**: Giúp các kỹ sư dữ liệu kiểm tra nhanh xem thuật toán có nhận diện sai, lệch hoặc thiếu vùng chữ/ảnh hay không trước khi đưa tập dữ liệu vào huấn luyện.
-
-4. **Thư mục `extracted_images/`**:
-   - **`page_XXX_raw_YYY.<ext>`**: File ảnh gốc được trích xuất nguyên bản nhúng trong PDF (giữ nguyên độ phân giải và chất lượng gốc). Mục đích là để thu thập các asset ảnh sạch phục vụ cho việc sinh dữ liệu synthetic nâng cao sau này.
-   - **`page_XXX_crop_YYY.png`**: File ảnh được cắt trực tiếp từ trang vẽ `page_XXX.png` dựa trên tọa độ bao. Mục đích là để lấy chính xác hình dạng ảnh hiển thị trên giao diện trang tài liệu (đã bao gồm các góc bo, tỉ lệ co giãn thực tế).
 
 ---
 
-### Chi tiết định dạng nhãn JSON (`layout_000.json`):
-```json
-{
-  "page_index": 0,
-  "page_dimensions": {
-    "points": [594.96, 841.92],
-    "pixels": [1240, 1754]
-  },
-  "coordinate_system": "pixel_coordinates",
-  "annotations": [
-    {
-      "type": "text",
-      "bbox": [165.62, 76.9, 235.41, 105.4],
-      "text": "Chuỗi",
-      "metadata": {
-        "block_no": 0,
-        "line_no": 0,
-        "word_no": 0
-      }
-    },
-    {
-      "type": "image",
-      "bbox": [1067.72, 1447.4, 1157.28, 1536.97],
-      "metadata": {
-        "block_no": 7,
-        "width": 270,
-        "height": 258,
-        "ext": "jpeg",
-        "image_path_raw": "extracted_images/page_000_raw_7.jpeg",
-        "image_path_crop": "extracted_images/page_000_crop_7.png"
-      }
-    }
-  ]
-}
-```
+## 💡 Lưu ý kỹ thuật (Troubleshooting & Tips)
+
+### Giải quyết vấn đề trang trắng/thiếu nội dung (Lazy Loading & Print CSS)
+
+Khi tải các trang web hiện đại về làm PDF ngầm, chúng ta thường gặp phải 2 vấn đề lớn:
+1. **Lazy Loading**: Các trang web chỉ tải ảnh hoặc nội dung khi người dùng cuộn chuột tới vị trí đó. Nếu in PDF trực tiếp ngay sau khi mở trang, các phần ở giữa và dưới trang sẽ bị trống hoàn toàn.
+2. **Print Stylesheet (@media print)**: Nhiều trang web áp dụng các luật CSS ẩn đi các thành phần lớn như menu, banner, sidebar, thậm chí cả nội dung chính khi in để tiết kiệm giấy in.
+
+**Cách giải quyết đã được tích hợp trong `scrape_fineweb_pdf.py`**:
+*   **Tự động cuộn trang (Scroll-to-bottom)**: Trước khi in PDF, Playwright sẽ chạy một hàm Javascript cuộn chuột tự động từ đầu trang xuống cuối trang để ép trình duyệt kích hoạt và tải toàn bộ ảnh/nội dung lười, sau đó cuộn ngược lại lên đầu để chuẩn bị in.
+*   **Giả lập giao diện màn hình (Emulate Screen)**: Gọi hàm `page.emulate_media(media="screen")` để bắt buộc trình duyệt sử dụng giao diện hiển thị trên màn hình máy tính để in PDF thay vì bộ CSS rút gọn dành cho máy in giấy. Cách này giúp giữ nguyên đầy đủ layout, banner và các khối bài viết.

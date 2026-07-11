@@ -14,7 +14,7 @@ def parse_args():
     parser.add_argument(
         "--num-samples",
         type=int,
-        default=5,
+        default=20,
         help="Number of successfully processed webpages to collect."
     )
     parser.add_argument(

@@ -58,7 +58,7 @@ Công cụ này stream trực tiếp tập dữ liệu `HuggingFaceFW/fineweb-2`
 ```
 
 **Các tham số tùy chọn (Options):**
-- `--num-samples`: Số lượng trang web cần tải và trích xuất thành công (mặc định: `5`).
+- `--num-samples`: Số lượng trang web cần tải và trích xuất thành công (mặc định: `20`).
 - `--output`: Thư mục lưu trữ kết quả (mặc định: `output_dataset/fineweb_samples`).
 - `--start-year` / `--end-year`: Khoảng năm bài viết được crawl để lọc dữ liệu (mặc định: `2021` đến `2026`).
 - `--granularity`: Cấp độ trích xuất chữ (`word` - mặc định, `line`, `block`).
@@ -68,8 +68,8 @@ Công cụ này stream trực tiếp tập dữ liệu `HuggingFaceFW/fineweb-2`
 
 **Ví dụ chạy thực tế:**
 ```bash
-# Tải 5 trang web tiếng Việt (2021-2026), in PDF và trích xuất layout block, tọa độ chuẩn hóa, cắt ảnh
-.venv/bin/python scrape_fineweb_pdf.py --num-samples 5 --granularity block --normalize --extract-images
+# Tải 20 trang web tiếng Việt (2021-2026), in PDF và trích xuất layout block, tọa độ chuẩn hóa, cắt ảnh
+.venv/bin/python scrape_fineweb_pdf.py --num-samples 20 --granularity block --normalize --extract-images
 ```
 
 ### 2. Trích xuất dữ liệu trực tiếp từ file PDF có sẵn (`extract_pdf_layout.py`)

@@ -61,6 +61,25 @@ def parse_args():
     )
     return parser.parse_args()
 
+def scroll_to_bottom(page):
+    try:
+        page.evaluate("""
+            async () => {
+                const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+                const scrollHeight = document.body.scrollHeight;
+                for (let i = 0; i < scrollHeight; i += 400) {
+                    window.scrollTo(0, i);
+                    await delay(100);
+                }
+                window.scrollTo(0, scrollHeight);
+                await delay(500);
+                window.scrollTo(0, 0);
+                await delay(500);
+            }
+        """)
+    except Exception as e:
+        print(f"  [Warning] Scrolling failed: {e}")
+
 def main():
     args = parse_args()
     
@@ -145,6 +164,13 @@ def main():
                 page.goto(url, wait_until="load", timeout=30000)
                 # Wait a bit for dynamic content/scripts to load fully
                 page.wait_for_timeout(3000)
+                
+                # Emulate screen media to prevent @media print stylesheet hiding elements
+                page.emulate_media(media="screen")
+                
+                # Scroll to bottom to trigger lazy loading of images/content
+                print(f"  Scrolling to trigger lazy-loaded content...")
+                scroll_to_bottom(page)
                 
                 print(f"  Printing page to PDF...")
                 page.pdf(

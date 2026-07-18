@@ -4,6 +4,7 @@ import sys
 import argparse
 import subprocess
 import shutil
+import json
 from datasets import load_dataset
 from playwright.sync_api import sync_playwright
 import threading
@@ -276,20 +277,63 @@ def main():
         print(f"Scroll Step   : {args.scroll_step} px")
         print(f"Scroll Delay  : {args.scroll_delay} ms")
     print("----------------------------------------------------------------\n")
+    cache_path = "fineweb_urls_cache.json"
+    cached_items = []
     
-    print("Loading dataset 'HuggingFaceFW/fineweb-2' (subset: vie_Latn, streaming: True)...")
-    try:
-        dataset = load_dataset(
-            "HuggingFaceFW/fineweb-2",
-            name="vie_Latn",
-            split="train",
-            streaming=True
-        )
-    except Exception as e:
-        print(f"Error loading dataset: {e}")
-        return
-        
-    thread_safe_dataset = ThreadSafeIter(dataset)
+    if os.path.exists(cache_path):
+        print(f"Loading URLs from local cache: '{cache_path}'...")
+        try:
+            with open(cache_path, "r", encoding="utf-8") as f_cache:
+                cached_items = json.load(f_cache)
+            print(f"Successfully loaded {len(cached_items)} URLs from cache.")
+        except Exception as e:
+            print(f"Warning: Failed to load cache: {e}. Rebuilding cache...")
+            cached_items = []
+
+    if not cached_items:
+        print("Cache is empty or invalid. Streaming from HuggingFace to pre-filter matching URLs...")
+        print("This is a one-time operation and will only take a few seconds (no browsers are launched)...")
+        try:
+            dataset = load_dataset(
+                "HuggingFaceFW/fineweb-2",
+                name="vie_Latn",
+                split="train",
+                streaming=True
+            )
+            
+            count = 0
+            target_cache_size = 1000
+            for item in dataset:
+                url = item.get("url")
+                date_str = item.get("date")
+                doc_id = item.get("id")
+                if not url or not date_str:
+                    continue
+                try:
+                    year = int(date_str[:4])
+                except ValueError:
+                    continue
+                if args.start_year <= year <= args.end_year:
+                    cached_items.append({
+                        "id": doc_id,
+                        "url": url,
+                        "date": date_str
+                    })
+                    count += 1
+                    if count % 100 == 0:
+                        print(f"  Found {count} matching URLs...")
+                    if count >= target_cache_size:
+                        break
+            
+            with open(cache_path, "w", encoding="utf-8") as f_cache:
+                json.dump(cached_items, f_cache, indent=2, ensure_ascii=False)
+            print(f"Successfully saved {len(cached_items)} matching URLs to '{cache_path}'.\n")
+            
+        except Exception as e:
+            print(f"Error loading/processing dataset from HuggingFace: {e}")
+            return
+            
+    thread_safe_dataset = ThreadSafeIter(cached_items)
     success_counter_ref = [0]
     total_inspected_ref = [0]
     lock = threading.Lock()

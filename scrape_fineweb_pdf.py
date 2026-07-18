@@ -302,7 +302,7 @@ def main():
             )
             
             count = 0
-            target_cache_size = 1000
+            target_cache_size = 100
             for item in dataset:
                 url = item.get("url")
                 date_str = item.get("date")
@@ -362,6 +362,10 @@ def main():
     print(f"Total inspected documents: {total_inspected_ref[0]}")
     print(f"Outputs saved in: {args.output}")
     print("================================================================")
+    
+    # Force exit to prevent Playwright background threads/processes from hanging on cleanup
+    import os
+    os._exit(0)
 
 if __name__ == "__main__":
     main()

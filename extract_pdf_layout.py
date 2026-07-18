@@ -168,11 +168,17 @@ def main():
                     # Calculate pixel bounding box for cropping
                     bx0, by0, bx1, by1 = block["bbox"]
                     px0, py0, px1, py1 = bx0 * zoom, by0 * zoom, bx1 * zoom, by1 * zoom
-                    # Load page image and crop
-                    with Image.open(img_path) as page_img:
-                        cropped = page_img.crop((int(px0), int(py0), int(px1), int(py1)))
-                        cropped.save(crop_path)
-                        img_metadata["image_path_crop"] = os.path.join("extracted_images", crop_name)
+                    # Ensure coordinates are ordered correctly and non-empty
+                    x0, y0, x1, y1 = int(min(px0, px1)), int(min(py0, py1)), int(max(px0, px1)), int(max(py0, py1))
+                    
+                    if (x1 - x0) > 0 and (y1 - y0) > 0:
+                        try:
+                            with Image.open(img_path) as page_img:
+                                cropped = page_img.crop((x0, y0, x1, y1))
+                                cropped.save(crop_path)
+                                img_metadata["image_path_crop"] = os.path.join("extracted_images", crop_name)
+                        except Exception as img_err:
+                            print(f"  [Warning] Failed to crop image block {block_no} on page {page_idx}: {img_err}")
                 
                 extracted_elements.append({
                     "type": "image",

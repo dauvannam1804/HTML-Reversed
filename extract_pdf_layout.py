@@ -40,9 +40,10 @@ def parse_args():
         help="If set, normalizes bounding boxes to a [0, 1000] scale instead of absolute pixel coordinates."
     )
     parser.add_argument(
-        "--extract-images",
-        action="store_true",
-        help="If set, extracts and saves individual images found in the PDF (both raw embedded bytes and visual crops)."
+        "--no-extract-images",
+        action="store_false",
+        dest="extract_images",
+        help="Disable extracting and saving individual images found in the PDF (both raw embedded bytes and visual crops)."
     )
     return parser.parse_args()
 

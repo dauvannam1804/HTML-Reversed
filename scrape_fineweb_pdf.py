@@ -14,7 +14,7 @@ def parse_args():
     parser.add_argument(
         "--num-samples",
         type=int,
-        default=20,
+        default=5,
         help="Number of successfully processed webpages to collect."
     )
     parser.add_argument(
@@ -55,9 +55,10 @@ def parse_args():
         help="Normalize bounding boxes to a [0, 1000] scale in layout extraction."
     )
     parser.add_argument(
-        "--extract-images",
-        action="store_true",
-        help="Extract and save individual images found in the PDF."
+        "--no-extract-images",
+        action="store_false",
+        dest="extract_images",
+        help="Disable extracting and saving individual images found in the PDF."
     )
     return parser.parse_args()
 
@@ -179,6 +180,13 @@ def main():
                     print_background=True,
                     margin={"top": "0.4in", "bottom": "0.4in", "left": "0.4in", "right": "0.4in"}
                 )
+                
+                print(f"  Saving page HTML source...")
+                html_content = page.content()
+                target_html_path = os.path.join(doc_output_dir, "source.html")
+                with open(target_html_path, "w", encoding="utf-8") as f_html:
+                    f_html.write(html_content)
+                
                 render_success = True
             except Exception as e:
                 print(f"  [Warning] Failed to render webpage: {e}")
@@ -202,8 +210,8 @@ def main():
             ]
             if args.normalize:
                 cmd.append("--normalize")
-            if args.extract_images:
-                cmd.append("--extract-images")
+            if not args.extract_images:
+                cmd.append("--no-extract-images")
                 
             # Run extraction as subprocess
             result = subprocess.run(cmd, capture_output=True, text=True)

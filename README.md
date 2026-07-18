@@ -64,12 +64,12 @@ Công cụ này stream trực tiếp tập dữ liệu `HuggingFaceFW/fineweb-2`
 - `--granularity`: Cấp độ trích xuất chữ (`word` - mặc định, `line`, `block`).
 - `--dpi`: Độ phân giải ảnh đầu ra khi render PDF (mặc định: `150`).
 - `--normalize`: Chuẩn hóa tọa độ bounding box về dải `[0, 1000]`.
-- `--extract-images`: Trích xuất cả các file ảnh/logo có trong trang web ra thư mục riêng và lưu đường dẫn vào JSON.
+- `--no-extract-images`: Tắt tính năng trích xuất hình ảnh (mặc định luôn tự động trích xuất và lưu đường dẫn ảnh vào file JSON).
 
 **Ví dụ chạy thực tế:**
 ```bash
-# Tải 20 trang web tiếng Việt (2021-2026), in PDF và trích xuất layout block, tọa độ chuẩn hóa, cắt ảnh
-.venv/bin/python scrape_fineweb_pdf.py --num-samples 20 --granularity block --normalize --extract-images
+# Tải 20 trang web tiếng Việt (2021-2026), in PDF và trích xuất layout block, tọa độ chuẩn hóa, tự động cắt ảnh
+.venv/bin/python scrape_fineweb_pdf.py --num-samples 20 --granularity block --normalize
 ```
 
 ### 2. Trích xuất dữ liệu trực tiếp từ file PDF có sẵn (`extract_pdf_layout.py`)
@@ -83,7 +83,7 @@ Công cụ này xử lý trực tiếp các file PDF có sẵn của bạn để
 
 **Ví dụ chạy thực tế:**
 ```bash
-.venv/bin/python extract_pdf_layout.py --pdf pharmarcity.pdf --output output_dataset/pharmarcity_layout --extract-images
+.venv/bin/python extract_pdf_layout.py --pdf pharmarcity.pdf --output output_dataset/pharmarcity_layout
 ```
 
 ---
@@ -97,6 +97,7 @@ output_dataset/fineweb_samples/
 ├── doc_000/
 │   ├── document.pdf              # File PDF gốc tải về từ trang web
 │   ├── url.txt                   # Đường dẫn link trang web nguồn của tài liệu này
+│   ├── source.html               # Mã nguồn HTML của trang web (cào từ Playwright)
 │   ├── page_000.png              # Ảnh render trang 1
 │   ├── layout_000.json           # Nhãn layout và OCR trang 1
 │   ├── viz_page_000.png          # Ảnh xem trước trực quan (khung xanh cho text, đỏ cho ảnh)

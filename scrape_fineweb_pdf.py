@@ -375,9 +375,7 @@ def main():
     print(f"Total inspected documents: {total_inspected_ref[0]}")
     print(f"Outputs saved in: {args.output}")
     print("================================================================")
-    
     # Force exit to prevent Playwright background threads/processes from hanging on cleanup
-    import os
     os._exit(0)
 
 if __name__ == "__main__":

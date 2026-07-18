@@ -189,7 +189,7 @@ def main():
         # Helper: convert point coords to desired format
         # [x0, y0, x1, y1]
         def format_bbox(bbox):
-            x0, y0, x1, y1 = bbox
+            x0, y0, x1, y1 = min(bbox[0], bbox[2]), min(bbox[1], bbox[3]), max(bbox[0], bbox[2]), max(bbox[1], bbox[3])
             if args.normalize:
                 # Normalize to [0, 1000] scale based on page_width and page_height
                 nx0 = max(0, min(1000, int((x0 / page_width) * 1000)))

@@ -290,9 +290,19 @@ def main():
             print(f"Warning: Failed to load cache: {e}. Rebuilding cache...")
             cached_items = []
 
-    if not cached_items:
-        print("Cache is empty or invalid. Streaming from HuggingFace to pre-filter matching URLs...")
-        print("This is a one-time operation and will only take a few seconds (no browsers are launched)...")
+    # If cache doesn't exist or has fewer samples than requested, load more from HF
+    if len(cached_items) < args.num_samples:
+        # If cache is totally empty, we want to pre-populate it with at least 100 samples
+        min_target_size = max(100, args.num_samples)
+        additional_needed = min_target_size - len(cached_items)
+        
+        if len(cached_items) == 0:
+            print("Cache is empty. Streaming from HuggingFace to pre-filter matching URLs...")
+            print(f"This is a one-time operation. Populating cache with {min_target_size} URLs (no browsers are launched)...")
+        else:
+            print(f"Cache has only {len(cached_items)} URLs, but you requested {args.num_samples} samples.")
+            print(f"Streaming from HuggingFace to fetch {additional_needed} more matching URLs...")
+
         try:
             dataset = load_dataset(
                 "HuggingFaceFW/fineweb-2",
@@ -301,12 +311,14 @@ def main():
                 streaming=True
             )
             
+            existing_ids = {item["id"] for item in cached_items}
             count = 0
-            target_cache_size = 100
             for item in dataset:
+                doc_id = item.get("id")
+                if doc_id in existing_ids:
+                    continue
                 url = item.get("url")
                 date_str = item.get("date")
-                doc_id = item.get("id")
                 if not url or not date_str:
                     continue
                 try:
@@ -320,18 +332,19 @@ def main():
                         "date": date_str
                     })
                     count += 1
-                    if count % 100 == 0:
-                        print(f"  Found {count} matching URLs...")
-                    if count >= target_cache_size:
+                    if count >= additional_needed:
                         break
             
             with open(cache_path, "w", encoding="utf-8") as f_cache:
                 json.dump(cached_items, f_cache, indent=2, ensure_ascii=False)
-            print(f"Successfully saved {len(cached_items)} matching URLs to '{cache_path}'.\n")
+            print(f"Successfully updated cache with {len(cached_items)} matching URLs in '{cache_path}'.\n")
             
         except Exception as e:
             print(f"Error loading/processing dataset from HuggingFace: {e}")
-            return
+            if not cached_items:
+                return
+            else:
+                print("Will proceed to crawl using the current cached URLs.")
             
     thread_safe_dataset = ThreadSafeIter(cached_items)
     success_counter_ref = [0]

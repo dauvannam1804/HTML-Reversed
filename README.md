@@ -65,11 +65,18 @@ Công cụ này stream trực tiếp tập dữ liệu `HuggingFaceFW/fineweb-2`
 - `--dpi`: Độ phân giải ảnh đầu ra khi render PDF (mặc định: `150`).
 - `--normalize`: Chuẩn hóa tọa độ bounding box về dải `[0, 1000]`.
 - `--no-extract-images`: Tắt tính năng trích xuất hình ảnh (mặc định luôn tự động trích xuất và lưu đường dẫn ảnh vào file JSON).
+- `--no-scroll`: Tắt tính năng cuộn trang tự động (tăng tốc độ crawl tối đa, phù hợp khi không quan tâm đến lazy-loaded content).
+- `--workers`: Số luồng/worker chạy song song (mặc định: `2`).
+- `--scroll-step`: Khoảng cách mỗi bước cuộn trang tính bằng pixel (mặc định: `1200`).
+- `--scroll-delay`: Thời gian chờ giữa các bước cuộn tính bằng mili-giây (mặc định: `30`).
 
 **Ví dụ chạy thực tế:**
 ```bash
 # Tải 20 trang web tiếng Việt (2021-2026), in PDF và trích xuất layout block, tọa độ chuẩn hóa, tự động cắt ảnh
 .venv/bin/python scrape_fineweb_pdf.py --num-samples 20 --granularity block --normalize
+
+# Chạy siêu tốc: crawl 100 mẫu bằng 4 luồng song song, bỏ qua scroll để tăng tối đa tốc độ
+.venv/bin/python scrape_fineweb_pdf.py --num-samples 100 --workers 4 --no-scroll
 ```
 
 ### 2. Trích xuất dữ liệu trực tiếp từ file PDF có sẵn (`extract_pdf_layout.py`)
